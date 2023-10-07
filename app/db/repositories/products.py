@@ -77,7 +77,7 @@ class ProductsRepository(BaseRepository):
         )
 
 
-    async def delete_product_by_id(self, *, id: int) -> int:
+    async def delete_product_by_id(self, *, id: int) -> int | None:
         product = await self.get_product_by_id(id=id)
 
         if not product:

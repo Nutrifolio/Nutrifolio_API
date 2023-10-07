@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from typing import Annotated
+from pydantic import BaseModel, Field
 
 
 class CoreModel(BaseModel):
@@ -9,4 +10,4 @@ class CoreModel(BaseModel):
 
 
 class IDModelMixin(BaseModel):
-    id: int
+    id: Annotated[int, Field(..., json_schema_extra={'example': 1})]
