@@ -9,9 +9,6 @@ class UserBase(CoreModel):
     """
     All common characteristics of our User resource
     """
-    username: Annotated[str, Field(..., json_schema_extra={
-        'example': 'John Doe'
-    })]
     email: Annotated[EmailStr, Field(..., json_schema_extra={
         'example': 'johndoe@gmail.com'
     })]
@@ -24,12 +21,6 @@ class UserCreate(UserBase):
     conf_password: Annotated[str, Field(..., json_schema_extra={
         'example': 'mysecretpassword'
     })]
-
-    @field_validator('username')
-    def username_validation(cls, username):
-        if not username:
-            raise ValueError('Username is required.')
-        return username
 
     @field_validator('email')
     def email_validation(cls, email):

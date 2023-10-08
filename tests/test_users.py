@@ -19,7 +19,6 @@ class TestUserRegistration:
     ) -> None:
         user_repo = UsersRepository(db)
         new_user = {
-            "username": "test_username",
             "email": "test_email@gmail.com",
             "password": "mysecretpassword",
             "conf_password": "mysecretpassword"
@@ -37,7 +36,6 @@ class TestUserRegistration:
         db_user = await user_repo.get_user_by_email(email=new_user["email"])
         assert db_user is not None
         assert db_user.email == new_user["email"]
-        assert db_user.username == new_user["username"]
         assert db_user.password != new_user["password"] # should be hashed
         assert auth_service.verify_password(
             password=new_user["password"],
@@ -58,7 +56,6 @@ class TestUserRegistration:
         self, app: FastAPI, client: AsyncClient, test_user: UserInDB,
     ) -> None:
         new_user = {
-            "username": "test_username",
             "email": "test_email@gmail.com", 
             "password": "mysecretpassword",
             "conf_password": "mysecretpassword"
@@ -77,17 +74,10 @@ class TestUserRegistration:
         (
             ({
                 "email": "not_taken_email@gmail.com", 
-                "password": "mysecretpassword",
-                "conf_password": "mysecretpassword"
-            }, 422), # missing username
-            ({
-                "username": "not_taken_username",
-                "email": "not_taken_email@gmail.com", 
                 "password": "short",
                 "conf_password": "short"
             }, 422), # weak password
             ({
-                "username": "not_taken_username",
                 "email": "not_taken_email@gmail.com", 
                 "password": "mysecretpassword_1",
                 "conf_password": "mysecretpassword_2"

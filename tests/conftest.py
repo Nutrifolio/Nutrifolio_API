@@ -81,7 +81,6 @@ async def test_product(db: Database) -> ProductInDB:
 @pytest_asyncio.fixture
 async def test_user(db: Database) -> UserInDB:
     new_user = UserCreate(
-        username="test_username",
         email="test_email@gmail.com",
         password="mysecretpassword",
         conf_password="mysecretpassword",

@@ -7,21 +7,21 @@ from databases import Database
 
 
 GET_USER_BY_ID_QUERY = """
-    SELECT id, username, email, password
+    SELECT id, email, password
     FROM users
     WHERE id = :id;
 """
 
 GET_USER_BY_EMAIL_QUERY = """
-    SELECT id, username, email, password
+    SELECT id, email, password
     FROM users
     WHERE email = :email;
 """
  
 REGISTER_NEW_USER_QUERY = """
-    INSERT INTO users (username, email, password)
-    VALUES (:username, :email, :password)
-    RETURNING id, username, email, password;
+    INSERT INTO users (email, password)
+    VALUES (:email, :password)
+    RETURNING id, email, password;
 """
 
 
