@@ -2,16 +2,21 @@ import warnings
 import os
 import pytest
 import pytest_asyncio
-from typing import Generator, AsyncGenerator
+from typing import BinaryIO, Generator, AsyncGenerator
 from fastapi import FastAPI
 from databases import Database
 from httpx import AsyncClient
 from asgi_lifespan import LifespanManager
 from app.api.main import get_application
+from app.api.dependencies.space_bucket import get_sb_client
 from app.models.products import ProductCreate, ProductInDB
 from app.db.repositories.products import ProductsRepository
 from app.models.users import UserCreate, UserInDB
 from app.db.repositories.users import UsersRepository
+from app.models.stores import StoreCreate, StoreInDB
+from app.db.repositories.stores import StoresRepository
+from app.models.store_profiles import StoreProfileCreate, StoreProfileInDB
+from app.db.repositories.store_profiles import StoreProfilesRepository
 from app.services import auth_service
 from app.core.config import SECRET_KEY
 
@@ -56,11 +61,7 @@ def db(app: FastAPI) -> Database:
 @pytest_asyncio.fixture
 async def client(app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
     async with LifespanManager(app):
-        async with AsyncClient(
-            app=app,
-            base_url="http://test-server",
-            headers={"Content-Type": "application/json"}
-        ) as client:
+        async with AsyncClient(app=app, base_url="http://test-server") as client:
             yield client
 
 
@@ -90,6 +91,7 @@ async def test_user(db: Database) -> UserInDB:
     return await user_repo.register_new_user(new_user=new_user)
 
 
+# Create an authorized client to test endpoints requiring user authentication
 @pytest.fixture
 def authorized_client_for_test_user(
     client: AsyncClient, test_user: UserInDB
@@ -105,3 +107,90 @@ def authorized_client_for_test_user(
     }
  
     return client
+
+
+# Create a test store in the database
+@pytest_asyncio.fixture
+async def test_store(db: Database) -> StoreInDB:
+    new_store = StoreCreate(
+        email="test_email@mystore.com",
+        password="mysecretpassword",
+        conf_password="mysecretpassword",
+    )
+ 
+    store_repo = StoresRepository(db)
+    return await store_repo.register_new_store(new_store=new_store)
+
+
+# Create a verified test store
+@pytest_asyncio.fixture
+async def verified_test_store(db: Database) -> StoreInDB:
+    new_store = StoreCreate(
+        email="test_email@mystore.com",
+        password="mysecretpassword",
+        conf_password="mysecretpassword",
+    )
+
+    store_repo = StoresRepository(db)
+    db_new_store = await store_repo.register_new_store(new_store=new_store)
+
+    return await db.fetch_one(
+        query="""
+            UPDATE stores
+            SET is_verified = TRUE
+            WHERE id = :id
+            RETURNING id, email, password, is_verified;
+        """,
+        values={"id": db_new_store.id}
+    )
+
+
+# Create the profile of the test store in the database
+@pytest_asyncio.fixture
+async def test_store_profile(db: Database, test_store: StoreInDB) -> StoreInDB:
+    new_store_profile = StoreProfileCreate(
+        name="test_store",
+        phone_number=6943444546,
+        address="test_address",
+        lat=38.214,
+        lng=23.812,
+        store_id=test_store.id
+    )
+
+    store_profile_repo = StoreProfilesRepository(db)
+    return await store_profile_repo.create_new_store_profile(
+        new_store_profile=new_store_profile
+    )
+
+
+# Create an authorized client to test endpoints requiring store authentication
+@pytest.fixture
+def authorized_client_for_test_store(
+    client: AsyncClient, test_store: StoreInDB
+) -> AsyncClient:
+    access_token = auth_service.create_access_token_for_store(
+        store_id=test_store.id,
+        secret_key=str(SECRET_KEY)
+    )
+ 
+    client.headers = {
+        **client.headers,
+        "Authorization": f"bearer {access_token}",
+    }
+ 
+    return client
+
+
+@pytest.fixture
+def mock_sb_client(app: FastAPI):
+    def sb_client():
+        class S3Client:
+            def upload_fileobj(
+                self, Fileobj: BinaryIO, Bucket: str, Key: str, ExtraArgs: dict
+            ) -> bool:
+                return True
+        return S3Client()
+
+    app.dependency_overrides[get_sb_client] = sb_client
+    yield
+    del app.dependency_overrides[get_sb_client]

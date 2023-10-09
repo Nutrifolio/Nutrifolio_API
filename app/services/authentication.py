@@ -1,7 +1,7 @@
 import jwt
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
-from app.models.token import JWTPayload
+from app.models.token import JWTPayloadUser, JWTPayloadStore
 from app.core.config import SECRET_KEY, JWT_ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 
@@ -29,7 +29,7 @@ class AuthService:
         secret_key: str = str(SECRET_KEY),
         expires_in: int = ACCESS_TOKEN_EXPIRE_MINUTES,
     ) -> str:
-        token_payload = JWTPayload(
+        token_payload = JWTPayloadUser(
             user_id=user_id,
             iat=datetime.timestamp(datetime.utcnow()),
             exp=datetime.timestamp(
@@ -51,6 +51,41 @@ class AuthService:
                 token, secret_key, algorithms=[JWT_ALGORITHM]
             )
             return payload.get("user_id")
+        except jwt.exceptions.ExpiredSignatureError:
+            raise AuthenticationException('JWT token has expired.')
+        except jwt.exceptions.InvalidTokenError:
+            raise AuthenticationException('Invalid JWT token.')
+
+
+    def create_access_token_for_store(
+        self,
+        *,
+        store_id: int,
+        secret_key: str = str(SECRET_KEY),
+        expires_in: int = ACCESS_TOKEN_EXPIRE_MINUTES,
+    ) -> str:
+        token_payload = JWTPayloadStore(
+            store_id=store_id,
+            iat=datetime.timestamp(datetime.utcnow()),
+            exp=datetime.timestamp(
+                datetime.utcnow() + timedelta(minutes=expires_in)
+            ),
+        )
+
+        access_token = jwt.encode(
+            token_payload.model_dump(), secret_key, algorithm=JWT_ALGORITHM
+        )
+        return access_token
+    
+
+    def verify_access_token_store(
+        self, *, token: str, secret_key: str = str(SECRET_KEY)
+    ) -> int:
+        try:
+            payload = jwt.decode(
+                token, secret_key, algorithms=[JWT_ALGORITHM]
+            )
+            return payload.get("store_id")
         except jwt.exceptions.ExpiredSignatureError:
             raise AuthenticationException('JWT token has expired.')
         except jwt.exceptions.InvalidTokenError:

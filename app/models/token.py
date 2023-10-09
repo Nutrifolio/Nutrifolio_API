@@ -5,8 +5,14 @@ from app.models.core import CoreModel
 from app.core.config import ACCESS_TOKEN_EXPIRE_MINUTES
 
 
-class JWTPayload(CoreModel):
+class JWTPayloadUser(CoreModel):
     user_id: int
+    iat: float
+    exp: float
+
+
+class JWTPayloadStore(CoreModel):
+    store_id: int
     iat: float
     exp: float
 

@@ -9,5 +9,9 @@ class CoreModel(BaseModel):
     pass
 
 
+class DetailResponse(BaseModel):
+    detail: str
+
+
 class IDModelMixin(BaseModel):
     id: Annotated[int, Field(..., json_schema_extra={'example': 1})]

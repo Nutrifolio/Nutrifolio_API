@@ -18,6 +18,10 @@ ACCESS_TOKEN_EXPIRE_MINUTES = config(
     default=7 * 24 * 60  # one week
 )
 
+DO_ACCESS_KEY = config("DO_ACCESS_KEY", cast=str)
+DO_SECRET_KEY = config("DO_SECRET_KEY", cast=Secret)
+DO_SPACE_BUCKET_URL = config("DO_SPACE_BUCKET_URL", cast=str)
+
 DATABASE_HOST = config("DATABASE_HOST", cast=str, default="postgis-db")
 DATABASE_PORT = config("DATABASE_PORT", cast=str, default="5432")
 DATABASE_NAME = config("DATABASE_NAME", cast=str)

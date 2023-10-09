@@ -7,7 +7,7 @@ from app.models.users import UserCreate, UserInDB, UserOut
 from app.db.repositories.users import UsersRepository
 from app.api.dependencies.auth import get_current_user
 from app.api.dependencies.database import get_repository
-from app.api.exceptions.users import EmailAlreadyExists, InvalidCredentials
+from app.api.exceptions.auth import EmailAlreadyExists, InvalidCredentials
 from app.core.logging import get_logger
 
 
@@ -30,7 +30,7 @@ async def register_new_user(
         access_token = auth_service.create_access_token_for_user(
             user_id=created_user.id
         )
-        return {"access_token": access_token, "token_type": "bearer"}
+        return AccessToken(access_token=access_token, token_type="bearer")
     except EmailAlreadyExists as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc))
     except Exception as exc:
@@ -63,7 +63,7 @@ async def user_login(
         access_token = auth_service.create_access_token_for_user(
             user_id=db_user.id
         )
-        return {"access_token": access_token, "token_type": "bearer"}
+        return AccessToken(access_token=access_token, token_type="bearer")
     except InvalidCredentials as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

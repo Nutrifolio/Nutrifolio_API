@@ -32,6 +32,10 @@ def run_migrations_online() -> None:
         with default_engine.connect() as default_conn:
             default_conn.execute(f"DROP DATABASE IF EXISTS {DATABASE_NAME}_test")
             default_conn.execute(f"CREATE DATABASE {DATABASE_NAME}_test")
+        
+        test_engine = create_engine(DB_URL, isolation_level="AUTOCOMMIT")
+        with test_engine.connect() as test_conn:
+            test_conn.execute("CREATE EXTENSION postgis;")
 
     connectable = config.attributes.get("connection", None)
     config.set_main_option("sqlalchemy.url", DB_URL)

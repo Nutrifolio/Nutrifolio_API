@@ -14,10 +14,14 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestUserRegistration:
+    @pytest.fixture
+    def user_repo(self, db: Database) -> UsersRepository:
+        return UsersRepository(db)
+
+
     async def test_users_can_register_successfully(
-        self, app: FastAPI, client: AsyncClient, db: Database,
+        self, app: FastAPI, client: AsyncClient, user_repo: UsersRepository,
     ) -> None:
-        user_repo = UsersRepository(db)
         new_user = {
             "email": "test_email@gmail.com",
             "password": "mysecretpassword",
@@ -101,7 +105,7 @@ class TestUserLogin:
     ) -> None:
         login_data = {
             "username": test_user.email,
-            "password": "mysecretpassword",  # insert user's plaintext password
+            "password": "mysecretpassword",  # test user's plaintext password
         }
 
         res = await client.post(
@@ -136,7 +140,7 @@ class TestUserLogin:
         credential: str, wrong_value: str, status_code: int,
     ) -> None:
         user_data = test_user.model_dump()
-        user_data["password"] = "mysecretpassword"
+        user_data["password"] = "mysecretpassword" # test user's plaintext pwd
         user_data[credential] = wrong_value
 
         login_data = {
