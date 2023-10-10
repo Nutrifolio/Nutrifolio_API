@@ -8,21 +8,33 @@ from databases import Database
 
 
 GET_STORE_PROFILE_BY_STORE_ID_QUERY = """
-    SELECT id, name, logo_url, phone_number, address, lat, lng, store_id
+    SELECT 
+        id, name, description, logo_url, phone_number, address, 
+        lat, lng, store_id
     FROM store_profiles
     WHERE store_id = :store_id;
 """
 
 GET_STORE_PROFILE_BY_NAME_QUERY = """
-    SELECT id, name, logo_url, phone_number, address, lat, lng, store_id
+    SELECT 
+        id, name, description, logo_url, phone_number, address, 
+        lat, lng, store_id
     FROM store_profiles
     WHERE name = :name;
 """
 
 CREATE_NEW_STORE_PROFILE_QUERY = """
-    INSERT INTO store_profiles (name, logo_url, phone_number, address, lat, lng, location, store_id)
-    VALUES (:name, :logo_url, :phone_number, :address, :lat, :lng, ST_MakePoint(:lng, :lat)::geography, :store_id)
-    RETURNING id, name, logo_url, phone_number, address, lat, lng, store_id;
+    INSERT INTO store_profiles (
+        name, description, logo_url, phone_number, address, 
+        lat, lng, location, store_id
+    )
+    VALUES (
+        :name, :description, :logo_url, :phone_number, :address, 
+        :lat, :lng, ST_MakePoint(:lng, :lat)::geography, :store_id
+    )
+    RETURNING
+        id, name, description, logo_url, phone_number, address, 
+        lat, lng, store_id;
 """
 
 

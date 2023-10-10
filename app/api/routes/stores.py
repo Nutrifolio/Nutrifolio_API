@@ -36,6 +36,7 @@ async def register_new_store(
     password: str = Form(...),
     conf_password: str = Form(...),
     name: str = Form(...),
+    desc: str = Form(None),
     logo_image: UploadFile = File(None),
     phone_number: int = Form(None),
     address: str = Form(...),
@@ -71,6 +72,7 @@ async def register_new_store(
 
             new_store_profile = StoreProfileCreate(
                 name=name,
+                desc=desc,
                 logo_url=logo_url,
                 phone_number=phone_number,
                 address=address,

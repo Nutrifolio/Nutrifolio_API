@@ -150,6 +150,7 @@ async def verified_test_store(db: Database) -> StoreInDB:
 async def test_store_profile(db: Database, test_store: StoreInDB) -> StoreInDB:
     new_store_profile = StoreProfileCreate(
         name="test_store",
+        description="test_desc",
         phone_number=6943444546,
         address="test_address",
         lat=38.214,

@@ -23,6 +23,7 @@ def upgrade() -> None:
         'store_profiles',
         sa.Column('id', sa.Integer, primary_key=True, autoincrement=True),
         sa.Column('name', sa.String, unique=True, nullable=False),
+        sa.Column('description', sa.Text, nullable=True),
         sa.Column('logo_url', sa.String, nullable=True),
         sa.Column('phone_number', sa.NUMERIC, nullable=True),
         sa.Column('address', sa.String, nullable=False),

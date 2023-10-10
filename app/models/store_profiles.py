@@ -15,6 +15,9 @@ class StoreProfileBase(CoreModel):
 
 
 class StoreProfileCreate(StoreProfileBase):
+    description: Annotated[Optional[str], Field(default=None, json_schema_extra={
+        'example': 'More than just great coffee.'
+    })]
     phone_number: Annotated[
         Optional[int], 
         Field(default=None, json_schema_extra={'example': 6940946282})
@@ -26,6 +29,9 @@ class StoreProfileCreate(StoreProfileBase):
 
 
 class StoreProfileInDB(IDModelMixin, StoreProfileBase):
+    description: Annotated[Optional[str], Field(default=None, json_schema_extra={
+        'example': 'More than just great coffee.'
+    })]
     phone_number: Annotated[
         Optional[int], 
         Field(default=None, json_schema_extra={'example': 6940946282})
@@ -37,6 +43,9 @@ class StoreProfileInDB(IDModelMixin, StoreProfileBase):
 
 
 class StoreProfileOut(IDModelMixin, StoreProfileBase):
+    description: Annotated[Optional[str], Field(default=None, json_schema_extra={
+        'example': 'More than just great coffee.'
+    })]
     phone_number: Annotated[
         Optional[int], 
         Field(default=None, json_schema_extra={'example': 6940946282})
