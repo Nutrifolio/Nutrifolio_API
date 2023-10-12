@@ -2,205 +2,227 @@ import pytest
 from typing import List
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+from app.models.stores import StoreInDB
 from app.models.products import ProductCreate, ProductInDB, ProductPublic
+from app.db.repositories.products import ProductsRepository
+from app.db.repositories.product_details import ProductDetailsRepository
+from app.db.repositories.product_tags import ProductTagsRepository
+from app.db.repositories.product_menu_categories import ProductMenuCategoriesRepository
+from databases import Database
 
 
 #  Decorates all tests with @pytest.mark.asyncio
 pytestmark = pytest.mark.asyncio
 
 
-class TestGetProduct:
-    async def test_get_product_by_id_successfully(
-        self, app: FastAPI, client: AsyncClient, test_product: ProductInDB
-    ) -> None:
-        res = await client.get(
-            app.url_path_for("get-product-by-id", id=test_product.id)
-        )
-        assert res.status_code == status.HTTP_200_OK
-
-        product = res.json()
-        assert product == test_product.model_dump()
-
-
-    @pytest.mark.parametrize(
-        "id, status_code",
-        (
-            (500, 404),
-            (-1, 422),
-            (None, 422),
-        ),
-    )
-    async def test_get_product_by_id_invalid_input(
-        self, app: FastAPI, client: AsyncClient,
-        id: int, status_code: int
-    ) -> None:
-        res = await client.get(app.url_path_for("get-product-by-id", id=id))
-        assert res.status_code == status_code
-
-    async def test_get_all_products_successfully(
-        self, app: FastAPI, client: AsyncClient, test_product: ProductInDB
-    ) -> None:
-        res = await client.get(app.url_path_for("get-all-products"))  
-        assert res.status_code == status.HTTP_200_OK
-        assert isinstance(res.json(), list)
-
-        products = res.json()
-        assert test_product.model_dump() in products
-
-
 class TestCreateProduct:
     @pytest.fixture
-    def new_product(self):
-        return ProductCreate(
-            name="test product",
-            description="test description",
-            price=1.00,
-        )
+    def product_repo(self, db: Database) -> ProductsRepository:
+        return ProductsRepository(db)
+
+    @pytest.fixture
+    def product_details_repo(self, db: Database) -> ProductDetailsRepository:
+        return ProductDetailsRepository(db)
+
+    @pytest.fixture
+    def product_tag_repo(self, db: Database) -> ProductTagsRepository:
+        return ProductTagsRepository(db)
+    
+    @pytest.fixture
+    def product_menu_category_repo(self, db: Database) -> ProductMenuCategoriesRepository:
+        return ProductMenuCategoriesRepository(db)
 
 
-    async def test_create_product_successfully(
-        self, app: FastAPI, client: AsyncClient, new_product: ProductCreate
+    async def test_unauthorized_store_cannot_create_product(
+        self,
+        app: FastAPI,
+        client: AsyncClient
     ) -> None:
+        data = {
+            "name": "test product",
+            "description": "test description",
+            "price": 1.00,
+            "is_public": True,
+            "calories": 100,
+            "protein": 10,
+            "carbs": 10,
+            "fat": 10,
+            "tag_ids": [1, 2],
+            "menu_category_ids": [1]
+        }
+
         res = await client.post(
-            app.url_path_for("create-product"), 
-            json={"new_product": new_product.model_dump()}
+            app.url_path_for("create-product"),
+            data=data
+        )
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+    async def test_authorized_store_can_create_product_without_logo_with_details(
+        self,
+        app: FastAPI,
+        authorized_client_for_verified_test_store: AsyncClient,
+        verified_test_store: StoreInDB,
+        product_repo: ProductsRepository,
+        product_details_repo: ProductDetailsRepository,
+        product_tag_repo: ProductTagsRepository,
+        product_menu_category_repo: ProductMenuCategoriesRepository
+    ) -> None:
+        data = {
+            "name": "test product",
+            "description": "test description",
+            "price": 1.00,
+            "is_public": True,
+            "calories": 100,
+            "protein": 10,
+            "carbs": 10,
+            "fat": 10,
+            "tag_ids": [1, 2],
+            "menu_category_ids": [1]
+        }
+
+        db_product = await product_repo.get_product_by_name_and_store_id(
+            name=data["name"], store_id=verified_test_store.id
+        )
+        assert db_product is None
+
+        res = await authorized_client_for_verified_test_store.post(
+            app.url_path_for("create-product"),
+            data=data
         )
         assert res.status_code == status.HTTP_201_CREATED
 
-        created_product = ProductCreate(**res.json())
-        assert created_product == new_product
-
-
-    @pytest.mark.parametrize(
-        "invalid_payload, status_code",
-        (
-            (None, 422),
-            ({}, 422),
-            ({"name": "test_name"}, 422),
-            ({"price": 10.00}, 422),
-            ({"name": "test_name", "description": "test desc"}, 422),
-        ),
-    )
-    async def test_create_product_invalid_input(
-        self, app: FastAPI, client: AsyncClient, 
-        invalid_payload: dict, status_code: int
-    ) -> None:
-        res = await client.post(
-            app.url_path_for("create-product"), 
-            json={"new_product": invalid_payload}
+        db_product = await product_repo.get_product_by_name_and_store_id(
+            name=data["name"], store_id=verified_test_store.id
         )
-        assert res.status_code == status_code
+        assert db_product is not None
+        assert db_product.name == data["name"]
+        assert db_product.description == data["description"]
+        assert db_product.image_url is None
+        assert db_product.price == data["price"]
+        assert db_product.is_public == data["is_public"]
+        assert db_product.has_details == True
+        assert db_product.store_id == verified_test_store.id
+
+        db_product_details = await product_details_repo.get_product_details_by_product_id(
+            product_id=db_product.id
+        )
+        assert db_product_details is not None
+        assert db_product_details.calories == data["calories"]
+        assert db_product_details.protein == data["protein"]
+        assert db_product_details.carbs == data["carbs"]
+        assert db_product_details.fiber is None
+        assert db_product_details.sugars is None
+        assert db_product_details.fat == data["fat"]
+        assert db_product_details.saturated_fat is None
+
+        db_product_tags = await product_tag_repo.get_product_tags_by_product_id(
+            product_id=db_product.id
+        )
+        assert len(db_product_tags) == len(data["tag_ids"])
+
+        db_product_menu_categories = await product_menu_category_repo.get_product_menu_categories_by_product_id(
+            product_id=db_product.id
+        )
+        assert len(db_product_menu_categories) == len(data["menu_category_ids"])
 
 
-class TestUpdateProduct:
-    @pytest.mark.parametrize(
-        "attrs_to_change, values",
-        (
-            (["name"], ["new fake product name"]),
-            (["description"], ["new fake product desc"]),
-            (["price"], [3.14]),
-            (
-                ["name", "description"],
-                [
-                    "extra new fake product name",
-                    "extra new fake product desc",
-                ],
-            ),
-            (["name", "price"], ["new fake product name", 42.00]),
-        ),
-    )
-    async def test_update_product_by_id_successfully(
-        self, app: FastAPI, client: AsyncClient, test_product: ProductInDB,
-        attrs_to_change: List[str], values: List[str],
+    async def test_authorized_store_can_create_product_with_logo_without_details(
+        self,
+        app: FastAPI,
+        authorized_client_for_verified_test_store: AsyncClient,
+        verified_test_store: StoreInDB,
+        product_repo: ProductsRepository,
+        product_details_repo: ProductDetailsRepository,
+        product_tag_repo: ProductTagsRepository,
+        product_menu_category_repo: ProductMenuCategoriesRepository,
+        mock_sb_client
     ) -> None:
-        product_update = {
-            "product_update": {
-                attrs_to_change[i]: values[i] for i in range(len(attrs_to_change))
-            }
+        data = {
+            "name": "test product",
+            "description": "test description",
+            "price": 1.00,
+            "is_public": True,
+            "tag_ids": [1, 2],
+            "menu_category_ids": [1]
+        }
+        files = {"product_image": open("./tests/assets/Nutrifolio-logo.png", "rb")}
+
+        db_product = await product_repo.get_product_by_name_and_store_id(
+            name=data["name"], store_id=verified_test_store.id
+        )
+        assert db_product is None
+
+        res = await authorized_client_for_verified_test_store.post(
+            app.url_path_for("create-product"),
+            data=data,
+            files=files
+        )
+        assert res.status_code == status.HTTP_201_CREATED
+
+        db_product = await product_repo.get_product_by_name_and_store_id(
+            name=data["name"], store_id=verified_test_store.id
+        )
+        assert db_product is not None
+        assert db_product.name == data["name"]
+        assert db_product.description == data["description"]
+        assert data["name"] in db_product.image_url
+        assert db_product.price == data["price"]
+        assert db_product.is_public == data["is_public"]
+        assert db_product.has_details == False
+        assert db_product.store_id == verified_test_store.id
+
+        db_product_details = await product_details_repo.get_product_details_by_product_id(
+            product_id=db_product.id
+        )
+        assert db_product_details is not None
+        assert db_product_details.calories is None
+        assert db_product_details.protein is None
+        assert db_product_details.carbs is None
+        assert db_product_details.fiber is None
+        assert db_product_details.sugars is None
+        assert db_product_details.fat is None
+        assert db_product_details.saturated_fat is None
+
+        db_product_tags = await product_tag_repo.get_product_tags_by_product_id(
+            product_id=db_product.id
+        )
+        assert len(db_product_tags) == len(data["tag_ids"])
+
+        db_product_menu_categories = await product_menu_category_repo.get_product_menu_categories_by_product_id(
+            product_id=db_product.id
+        )
+        assert len(db_product_menu_categories) == len(data["menu_category_ids"])
+
+
+    async def test_same_store_cannot_create_two_products_with_same_name(
+        self,
+        app: FastAPI,
+        authorized_client_for_verified_test_store: AsyncClient,
+        verified_test_store: StoreInDB,
+        test_product: ProductInDB,
+        product_repo: ProductsRepository
+    ) -> None:
+        data = {
+            "name": "test product",
+            "description": "test description",
+            "price": 1.00,
+            "is_public": True,
+            "calories": 100,
+            "protein": 10,
+            "carbs": 10,
+            "fat": 10,
+            "tag_ids": [1, 2],
+            "menu_category_ids": [1]
         }
 
-        res = await client.put(
-            app.url_path_for(
-                "update-product-by-id",
-                id=test_product.id,
-            ),
-            json=product_update
+        db_product = await product_repo.get_product_by_name_and_store_id(
+            name=data["name"], store_id=verified_test_store.id
         )
-        assert res.status_code == status.HTTP_200_OK
+        assert db_product is not None
 
-        # make sure it's the same product
-        updated_product = res.json()
-        assert updated_product["id"] == test_product.id
-
-        # make sure that any attribute we updated has changed to the correct value
-        for i in range(len(attrs_to_change)):
-            attr_to_change = updated_product[attrs_to_change[i]]
-            assert attr_to_change != test_product.model_dump()[attrs_to_change[i]]
-            assert attr_to_change == values[i]
-
-        # make sure that no other attributes' values have changed
-        for attr, value in updated_product.items():
-            if attr not in attrs_to_change:
-                assert test_product.model_dump()[attr] == value
-
-
-    @pytest.mark.parametrize(
-        "id, payload, status_code",
-        (
-            (-1, {"name": "test"}, 422),
-            (0, {"name": "test2"}, 422),
-            (1, None, 422),
-            (500, {"name": "test3"}, 404),
-        ),
-    )
-    async def test_update_product_by_id_invalid_input(
-        self, app: FastAPI, client: AsyncClient,
-        id: int, payload: dict, status_code: int,
-    ) -> None:
-        product_update = {"product_update": payload}
-
-        res = await client.put(
-            app.url_path_for("update-product-by-id", id=id),
-            json=product_update
+        res = await authorized_client_for_verified_test_store.post(
+            app.url_path_for("create-product"),
+            data=data
         )
-        assert res.status_code == status_code
-
-
-class TestDeleteProduct:
-    async def test_delete_product_by_id_successfully(
-        self, app: FastAPI, client: AsyncClient, test_product: ProductInDB,
-    ) -> None:
-        res = await client.delete(
-            app.url_path_for(
-                "delete-product-by-id",
-                id=test_product.id,
-            ),
-        )
-        assert res.status_code == status.HTTP_200_OK
-
-        res = await client.get(
-            app.url_path_for(
-                "get-product-by-id",
-                id=test_product.id,
-            ),
-        )
-        assert res.status_code == status.HTTP_404_NOT_FOUND
-
-
-    @pytest.mark.parametrize(
-        "id, status_code",
-        (
-            (500, 404),
-            (0, 422),
-            (-1, 422),
-            (None, 422),
-        ),
-    )
-    async def test_delete_product_by_id_invalid_input(
-        self, app: FastAPI, client: AsyncClient, test_product: ProductInDB,
-        id: int, status_code: int,
-    ) -> None:
-        res = await client.delete(
-            app.url_path_for("delete-product-by-id", id=id),
-        )
-        assert res.status_code == status_code
+        assert res.status_code == status.HTTP_409_CONFLICT

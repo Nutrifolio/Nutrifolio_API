@@ -18,9 +18,12 @@ class JWTPayloadStore(CoreModel):
 
 
 class AccessToken(CoreModel):
-    access_token: Annotated[str, Field(..., json_schema_extra={
-        'example': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpYXQiOjE2OTY2NzE2NzYuNDY1MTQ3LCJleHAiOjE2OTcyNzY0NzYuNDY1MTU1fQ.4wH-Cnot-pwN1aZ87sTjZyQBe5oQOZ-RITjnsnA5T5I'
-    })]
-    token_type: Annotated[str, Field(..., json_schema_extra={
-        'example': 'bearer'
-    })]
+    access_token: Annotated[
+        str, 
+        Field(..., json_schema_extra={
+            'example': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpYXQiOjE2OTY2NzE2NzYuNDY1MTQ3LCJleHAiOjE2OTcyNzY0NzYuNDY1MTU1fQ.4wH-Cnot-pwN1aZ87sTjZyQBe5oQOZ-RITjnsnA5T5I'
+        })
+    ]
+    token_type: Annotated[
+        str, Field(..., json_schema_extra={'example': 'bearer'})
+    ]

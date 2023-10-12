@@ -322,23 +322,23 @@ class TestStoreMe:
     async def test_authenticated_store_can_retrieve_own_data(
         self,
         app: FastAPI,
-        authorized_client_for_test_store: AsyncClient,
-        test_store_profile: StoreProfileInDB,
+        authorized_client_for_verified_test_store: AsyncClient,
+        verified_test_store_profile: StoreProfileInDB,
     ) -> None:
-        res = await authorized_client_for_test_store.get(
+        res = await authorized_client_for_verified_test_store.get(
             app.url_path_for("get-current-store-profile-info")
         )
         assert res.status_code == status.HTTP_200_OK
 
         store_profile = StoreProfileOut(**res.json())
-        assert store_profile.id == test_store_profile.id
-        assert store_profile.name == test_store_profile.name
-        assert store_profile.logo_url == test_store_profile.logo_url
-        assert store_profile.phone_number == test_store_profile.phone_number
-        assert store_profile.address == test_store_profile.address
-        assert store_profile.lat == test_store_profile.lat
-        assert store_profile.lng == test_store_profile.lng
-        assert store_profile.store_id == test_store_profile.store_id
+        assert store_profile.id == verified_test_store_profile.id
+        assert store_profile.name == verified_test_store_profile.name
+        assert store_profile.logo_url == verified_test_store_profile.logo_url
+        assert store_profile.phone_number == verified_test_store_profile.phone_number
+        assert store_profile.address == verified_test_store_profile.address
+        assert store_profile.lat == verified_test_store_profile.lat
+        assert store_profile.lng == verified_test_store_profile.lng
+        assert store_profile.store_id == verified_test_store_profile.store_id
 
 
     async def test_store_cannot_access_own_data_if_not_authenticated(

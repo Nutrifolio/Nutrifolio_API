@@ -9,18 +9,18 @@ class StoreBase(CoreModel):
     """
     All common characteristics of our Store resource
     """
-    email: Annotated[EmailStr, Field(..., json_schema_extra={
-        'example': 'admin@mystore.com'
-    })]
+    email: Annotated[
+        EmailStr, Field(..., json_schema_extra={'example': 'admin@mystore.com'})
+    ]
 
 
 class StoreCreate(StoreBase):
-    password: Annotated[str, Field(..., json_schema_extra={
-        'example': 'mysecretpassword'
-    })]
-    conf_password: Annotated[str, Field(..., json_schema_extra={
-        'example': 'mysecretpassword'
-    })]
+    password: Annotated[
+        str, Field(..., json_schema_extra={'example': 'mysecretpassword'})
+    ]
+    conf_password: Annotated[
+        str, Field(..., json_schema_extra={'example': 'mysecretpassword'})
+    ]
 
     @field_validator('email')
     def email_validation(cls, email):
@@ -42,12 +42,12 @@ class StoreCreate(StoreBase):
 
 
 class StoreInDB(IDModelMixin, StoreBase):
-    password: Annotated[str, Field(..., json_schema_extra={
-        'example': 'mysecretpassword'
-    })]
-    is_verified: Annotated[bool, Field(..., json_schema_extra={
-        'example': True
-    })]
+    password: Annotated[
+        str, Field(..., json_schema_extra={'example': 'mysecretpassword'})
+    ]
+    is_verified: Annotated[
+        bool, Field(..., json_schema_extra={'example': True})
+    ]
 
 
 class StoreOut(IDModelMixin, StoreBase):

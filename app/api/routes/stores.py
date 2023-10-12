@@ -51,24 +51,23 @@ async def register_new_store(
         db_store_profile = await store_profile_repo.get_store_profile_by_name(name=name)
         if db_store_profile:
             raise StoreNameAlreadyExists(f"There is already an account registered with the name {name}")
+
+        logo_url = None
+        if logo_image is not None:
+            space_bucket_folder = 'store_profiles'
+            sb_client.upload_fileobj(
+                logo_image.file,
+                space_bucket_folder,
+                name,
+                ExtraArgs={"ACL": "public-read"}
+            )
+            logo_url = f"{DO_SPACE_BUCKET_URL}/{space_bucket_folder}/{name}"
         
         async with db.transaction():
             new_store = StoreCreate(
                 email=email, password=password, conf_password=conf_password
             )
             created_store = await store_repo.register_new_store(new_store=new_store)
-
-            if logo_image is not None:
-                space_bucket_folder = 'store_profiles'
-                sb_client.upload_fileobj(
-                    logo_image.file,
-                    space_bucket_folder,
-                    name,
-                    ExtraArgs={"ACL": "public-read"}
-                )
-                logo_url = f"{DO_SPACE_BUCKET_URL}/{space_bucket_folder}/{name}"
-            else:
-                logo_url = None
 
             new_store_profile = StoreProfileCreate(
                 name=name,

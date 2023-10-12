@@ -65,19 +65,6 @@ async def client(app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
             yield client
 
 
-# Create a test product in the database
-@pytest_asyncio.fixture
-async def test_product(db: Database) -> ProductInDB:
-    new_product = ProductCreate(
-        name="test product",
-        description="test description",
-        price=1.00,
-    )
-
-    product_repo = ProductsRepository(db)
-    return await product_repo.create_product(new_product=new_product)
-
-
 # Create a test user in the database
 @pytest_asyncio.fixture
 async def test_user(db: Database) -> UserInDB:
@@ -122,6 +109,25 @@ async def test_store(db: Database) -> StoreInDB:
     return await store_repo.register_new_store(new_store=new_store)
 
 
+# Create the profile of the test store in the database
+@pytest_asyncio.fixture
+async def test_store_profile(db: Database, test_store: StoreInDB) -> StoreInDB:
+    new_store_profile = StoreProfileCreate(
+        name="test_store",
+        description="test_desc",
+        phone_number=6943444546,
+        address="test_address",
+        lat=38.214,
+        lng=23.812,
+        store_id=test_store.id
+    )
+
+    store_profile_repo = StoreProfilesRepository(db)
+    return await store_profile_repo.create_new_store_profile(
+        new_store_profile=new_store_profile
+    )
+
+
 # Create a verified test store
 @pytest_asyncio.fixture
 async def verified_test_store(db: Database) -> StoreInDB:
@@ -147,7 +153,9 @@ async def verified_test_store(db: Database) -> StoreInDB:
 
 # Create the profile of the test store in the database
 @pytest_asyncio.fixture
-async def test_store_profile(db: Database, test_store: StoreInDB) -> StoreInDB:
+async def verified_test_store_profile(
+    db: Database, verified_test_store: StoreInDB
+) -> StoreInDB:
     new_store_profile = StoreProfileCreate(
         name="test_store",
         description="test_desc",
@@ -155,7 +163,7 @@ async def test_store_profile(db: Database, test_store: StoreInDB) -> StoreInDB:
         address="test_address",
         lat=38.214,
         lng=23.812,
-        store_id=test_store.id
+        store_id=verified_test_store.id
     )
 
     store_profile_repo = StoreProfilesRepository(db)
@@ -166,11 +174,11 @@ async def test_store_profile(db: Database, test_store: StoreInDB) -> StoreInDB:
 
 # Create an authorized client to test endpoints requiring store authentication
 @pytest.fixture
-def authorized_client_for_test_store(
-    client: AsyncClient, test_store: StoreInDB
+def authorized_client_for_verified_test_store(
+    client: AsyncClient, verified_test_store: StoreInDB
 ) -> AsyncClient:
     access_token = auth_service.create_access_token_for_store(
-        store_id=test_store.id,
+        store_id=verified_test_store.id,
         secret_key=str(SECRET_KEY)
     )
  
@@ -180,6 +188,23 @@ def authorized_client_for_test_store(
     }
  
     return client
+
+
+@pytest_asyncio.fixture
+async def test_product(
+    db: Database, verified_test_store: StoreInDB
+) -> ProductInDB:
+    new_product = ProductCreate(
+        name="test product",
+        description="test description 1",
+        price=1.00,
+        has_details=False,
+        is_public=True,
+        store_id=verified_test_store.id
+    )
+
+    product_repo = ProductsRepository(db)
+    return await product_repo.create_product(new_product=new_product)
 
 
 @pytest.fixture

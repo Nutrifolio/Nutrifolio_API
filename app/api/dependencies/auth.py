@@ -32,6 +32,20 @@ async def get_current_user(
 oauth2_scheme_stores = OAuth2PasswordBearer(tokenUrl="/api/stores/login")
 
 
+async def get_current_store_id(
+    token: Annotated[str, Depends(oauth2_scheme_stores)]
+) -> int:
+    try:
+        store_id = auth_service.verify_access_token_store(token=token)
+        return store_id
+    except AuthenticationException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
+            headers={"WWW-Authenticate":"Bearer"}
+        )
+
+
 async def get_current_store_profile(
     token: Annotated[str, Depends(oauth2_scheme_stores)],
     store_profile_repo: Annotated[

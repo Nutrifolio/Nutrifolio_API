@@ -23,7 +23,12 @@ def create_truncate_tables_function() -> None:
         DECLARE tables_to_truncate CURSOR FOR
             SELECT tablename FROM pg_tables
             WHERE schemaname = 'public'
-                AND tablename NOT IN ('alembic_version', 'spatial_ref_sys');
+                AND tablename NOT IN (
+                    'alembic_version',
+                    'spatial_ref_sys', 
+                    'tags',
+                    'menu_categories'
+                );
         BEGIN
             FOR tbl IN tables_to_truncate LOOP
                 EXECUTE 'TRUNCATE TABLE ' || quote_ident(tbl.tablename) || ' RESTART IDENTITY CASCADE;';
@@ -34,21 +39,9 @@ def create_truncate_tables_function() -> None:
     )
 
 
-def create_products_table() -> None:
-    op.create_table(
-        "products",
-        sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("name", sa.Text, nullable=False, index=True),
-        sa.Column("description", sa.Text, nullable=True),
-        sa.Column("price", sa.Numeric(10, 2), nullable=False),
-    )
-
-
 def upgrade() -> None:
     create_truncate_tables_function()
-    create_products_table()
 
 
 def downgrade() -> None:
     op.execute("DROP FUNCTION IF EXISTS truncate_tables();")
-    op.drop_table("products")

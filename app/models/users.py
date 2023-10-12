@@ -9,18 +9,18 @@ class UserBase(CoreModel):
     """
     All common characteristics of our User resource
     """
-    email: Annotated[EmailStr, Field(..., json_schema_extra={
-        'example': 'johndoe@gmail.com'
-    })]
+    email: Annotated[
+        EmailStr, Field(..., json_schema_extra={'example': 'johndoe@gmail.com'})
+    ]
 
 
 class UserCreate(UserBase):
-    password: Annotated[str, Field(..., json_schema_extra={
-        'example': 'mysecretpassword'
-    })]
-    conf_password: Annotated[str, Field(..., json_schema_extra={
-        'example': 'mysecretpassword'
-    })]
+    password: Annotated[
+        str, Field(..., json_schema_extra={'example': 'mysecretpassword'})
+    ]
+    conf_password: Annotated[
+        str, Field(..., json_schema_extra={'example': 'mysecretpassword'})
+    ]
 
     @field_validator('email')
     def email_validation(cls, email):
@@ -42,9 +42,9 @@ class UserCreate(UserBase):
 
 
 class UserInDB(IDModelMixin, UserBase):
-    password: Annotated[str, Field(..., json_schema_extra={
-        'example': 'mysecretpassword'
-    })]
+    password: Annotated[
+        str, Field(..., json_schema_extra={'example': 'mysecretpassword'})
+    ]
 
 
 class UserOut(IDModelMixin, UserBase):
