@@ -2,12 +2,14 @@ import boto3
 from typing import Callable
 from fastapi import FastAPI
 from app.core.config import DO_ACCESS_KEY, DO_SECRET_KEY, DO_SPACE_BUCKET_URL
-from app.db.events import establish_connection_pool, release_connection_pool
+from app.db.events import establish_db_connection_pool, release_db_connection_pool
+from app.cache.events import establish_cache_connection_pool, release_cache_connection_pool
 
 
 def create_start_app_handler(app: FastAPI) -> Callable:
     async def start_app() -> None:
-        await establish_connection_pool(app)
+        await establish_db_connection_pool(app)
+        await establish_cache_connection_pool(app)
         app.state._sb_client = boto3.client(
             's3',
             region_name='fra1',
@@ -20,6 +22,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 
 def create_stop_app_handler(app: FastAPI) -> Callable:
     async def stop_app() -> None:
-        await release_connection_pool(app)
+        await release_db_connection_pool(app)
+        await release_cache_connection_pool(app)
         app.state._sb_client.close()
     return stop_app

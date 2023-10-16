@@ -8,7 +8,7 @@ from app.core.logging import get_logger
 db_events_logger = get_logger(__name__)
 
 
-async def establish_connection_pool(app: FastAPI) -> None:
+async def establish_db_connection_pool(app: FastAPI) -> None:
     DB_URL = f"{DATABASE_URL}_test" if os.environ.get("TESTING") else DATABASE_URL
     database = Database(
         DB_URL, 
@@ -23,7 +23,7 @@ async def establish_connection_pool(app: FastAPI) -> None:
         db_events_logger.exception(exc)
 
 
-async def release_connection_pool(app: FastAPI) -> None:
+async def release_db_connection_pool(app: FastAPI) -> None:
     try:
         await app.state._conn_pool.disconnect()
     except Exception as exc:

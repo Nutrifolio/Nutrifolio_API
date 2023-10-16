@@ -35,6 +35,7 @@ def upgrade() -> None:
             sa.Integer,
             sa.ForeignKey('stores.id', ondelete='CASCADE', onupdate='CASCADE'),
             unique=True,
+            index=True,
             nullable=False
         ),
     )

@@ -83,7 +83,7 @@ async def register_new_store(
                 new_store_profile=new_store_profile
             )
 
-        return {"detail": "Successfully submitted for review."}
+        return DetailResponse(detail="Successfully submitted for review.")
     except ValidationError as exc:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,

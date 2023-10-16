@@ -9,6 +9,13 @@ GET_MENU_CATEGORY_BY_ID_QUERY = """
     WHERE id = :id;
 """
 
+GET_MENU_CATEGORIES_FOR_PRODUCT_BY_PRODUCT_ID = """
+    SELECT mc.id, mc.label, mc.description
+    FROM menu_categories AS mc
+        INNER JOIN product_menu_categories AS pmc ON mc.id = pmc.menu_category_id
+    WHERE pmc.product_id = :product_id;
+"""
+
 
 class MenuCategoriesRepository(BaseRepository):
     """"
@@ -24,3 +31,17 @@ class MenuCategoriesRepository(BaseRepository):
             return None
 
         return MenuCategoryInDB(**menu_category_record)
+
+
+    async def get_menu_categories_for_product_by_product_id(
+        self, *, product_id: int
+    ) -> list[MenuCategoryInDB]:
+        menu_category_records = await self.db.fetch_all(
+            query=GET_MENU_CATEGORIES_FOR_PRODUCT_BY_PRODUCT_ID, 
+            values={"product_id": product_id}
+        )
+
+        return [
+            MenuCategoryInDB(**menu_category_record) 
+            for menu_category_record in menu_category_records
+        ]

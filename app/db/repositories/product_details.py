@@ -25,7 +25,9 @@ class ProductDetailsRepository(BaseRepository):
     All database actions associated with the ProductDetails resource
     """
 
-    async def get_product_details_by_product_id(self, *, product_id: int) -> ProductDetailsInDB:
+    async def get_product_details_by_product_id(
+        self, *, product_id: int
+    ) -> ProductDetailsInDB:
         product_details_record = await self.db.fetch_one(
             query=GET_PRODUCT_DETAILS_BY_PRODUCT_ID_QUERY, 
             values={"product_id": product_id}

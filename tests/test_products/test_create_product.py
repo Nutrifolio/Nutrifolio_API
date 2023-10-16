@@ -1,14 +1,13 @@
 import pytest
-from typing import List
+import pytest_asyncio
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from app.models.stores import StoreInDB
-from app.models.products import ProductCreate, ProductInDB, ProductPublic
+from app.models.products import ProductCreate, ProductInDB
 from app.db.repositories.products import ProductsRepository
 from app.db.repositories.product_details import ProductDetailsRepository
 from app.db.repositories.product_tags import ProductTagsRepository
 from app.db.repositories.product_menu_categories import ProductMenuCategoriesRepository
-from databases import Database
 
 
 #  Decorates all tests with @pytest.mark.asyncio
@@ -16,23 +15,6 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestCreateProduct:
-    @pytest.fixture
-    def product_repo(self, db: Database) -> ProductsRepository:
-        return ProductsRepository(db)
-
-    @pytest.fixture
-    def product_details_repo(self, db: Database) -> ProductDetailsRepository:
-        return ProductDetailsRepository(db)
-
-    @pytest.fixture
-    def product_tag_repo(self, db: Database) -> ProductTagsRepository:
-        return ProductTagsRepository(db)
-    
-    @pytest.fixture
-    def product_menu_category_repo(self, db: Database) -> ProductMenuCategoriesRepository:
-        return ProductMenuCategoriesRepository(db)
-
-
     async def test_unauthorized_store_cannot_create_product(
         self,
         app: FastAPI,
@@ -193,6 +175,22 @@ class TestCreateProduct:
             product_id=db_product.id
         )
         assert len(db_product_menu_categories) == len(data["menu_category_ids"])
+
+
+    @pytest_asyncio.fixture
+    async def test_product(
+        self, verified_test_store: StoreInDB, product_repo: ProductsRepository
+    ) -> ProductInDB:
+        new_product = ProductCreate(
+            name="test product",
+            description="test description 1",
+            price=1.00,
+            has_details=False,
+            is_public=True,
+            store_id=verified_test_store.id
+        )
+
+        return await product_repo.create_product(new_product=new_product)
 
 
     async def test_same_store_cannot_create_two_products_with_same_name(

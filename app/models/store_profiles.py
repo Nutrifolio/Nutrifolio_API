@@ -13,11 +13,6 @@ class StoreProfileBase(CoreModel):
             'example': 'https://domain.com/path/logo.png'
         })
     ]
-    lat: Annotated[float, Field(..., json_schema_extra={'example': 38.011726})]
-    lng: Annotated[float, Field(..., json_schema_extra={'example': 23.822457})]
-
-
-class StoreProfileCreate(StoreProfileBase):
     description: Annotated[
         Optional[str],
         Field(default=None, json_schema_extra={
@@ -34,44 +29,55 @@ class StoreProfileCreate(StoreProfileBase):
             'example': 'Agiou Ioannou, Agia Paraskevi 153 42'
         })
     ]
+    lat: Annotated[float, Field(..., json_schema_extra={'example': 38.011726})]
+    lng: Annotated[float, Field(..., json_schema_extra={'example': 23.822457})]
     store_id: Annotated[int, Field(..., json_schema_extra={'example': 1})]
+
+
+class StoreProfileCreate(StoreProfileBase):
+    pass
 
 
 class StoreProfileInDB(IDModelMixin, StoreProfileBase):
-    description: Annotated[
-        Optional[str],
-        Field(default=None, json_schema_extra={
-            'example': 'More than just great coffee.'
-        })
-    ]
-    phone_number: Annotated[
-        Optional[int], 
-        Field(default=None, json_schema_extra={'example': 6940946282})
-    ]
-    address: Annotated[
-        str,
-        Field(..., json_schema_extra={
-            'example': 'Agiou Ioannou, Agia Paraskevi 153 42'
-        })
-    ]
-    store_id: Annotated[int, Field(..., json_schema_extra={'example': 1})]
+    pass
 
 
 class StoreProfileOut(IDModelMixin, StoreProfileBase):
-    description: Annotated[
+    pass
+
+
+class StoreProfileOutProductDetailed(IDModelMixin):
+    # The id contained in this model will actually be the store_id
+    name: Annotated[
+        str, Field(..., json_schema_extra={'example': 'Starbucks'})
+    ]
+    logo_url: Annotated[
         Optional[str],
         Field(default=None, json_schema_extra={
-            'example': 'More than just great coffee.'
+            'example': 'https://domain.com/path/logo.png'
         })
     ]
-    phone_number: Annotated[
-        Optional[int], 
-        Field(default=None, json_schema_extra={'example': 6940946282})
-    ]
     address: Annotated[
-        str,
+        str, 
         Field(..., json_schema_extra={
             'example': 'Agiou Ioannou, Agia Paraskevi 153 42'
         })
     ]
-    store_id: Annotated[int, Field(..., json_schema_extra={'example': 1})]
+    lat: Annotated[float, Field(..., json_schema_extra={'example': 38.011726})]
+    lng: Annotated[float, Field(..., json_schema_extra={'example': 23.822457})]
+
+
+class StoreProfileOutFilter(IDModelMixin):
+    # The id contained in this model will actually be the store_id
+    name: Annotated[
+        str, Field(..., json_schema_extra={'example': 'Starbucks'})
+    ]
+    logo_url: Annotated[
+        Optional[str],
+        Field(default=None, json_schema_extra={
+            'example': 'https://domain.com/path/logo.png'
+        })
+    ]
+    distance_km: Annotated[
+        float, Field(..., json_schema_extra={'example': 1.23})
+    ]

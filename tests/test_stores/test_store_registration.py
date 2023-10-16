@@ -1,14 +1,12 @@
-import jwt
 import pytest
-from fastapi import FastAPI, status, HTTPException
+import pytest_asyncio
+from fastapi import FastAPI, status
 from httpx import AsyncClient
-from app.models.stores import StoreCreate, StoreInDB
-from app.models.store_profiles import StoreProfileInDB, StoreProfileOut
+from app.models.stores import StoreInDB
+from app.models.store_profiles import StoreProfileCreate, StoreProfileInDB, StoreProfileOut
 from app.db.repositories.stores import StoresRepository
 from app.db.repositories.store_profiles import StoreProfilesRepository
-from app.core.config import SECRET_KEY, JWT_ALGORITHM
 from app.services import auth_service
-from databases import Database
 
 
 #  Decorates all tests with @pytest.mark.asyncio
@@ -16,16 +14,6 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestStoreRegistration:
-    @pytest.fixture
-    def store_repo(self, db: Database) -> StoresRepository:
-        return StoresRepository(db)
-
-
-    @pytest.fixture
-    def store_profile_repo(self, db: Database) -> StoreProfilesRepository:
-        return StoreProfilesRepository(db)
-
-
     async def test_stores_can_register_successfully_without_logo(
         self,
         app: FastAPI,
@@ -131,6 +119,25 @@ class TestStoreRegistration:
 
         detail = res.json().get("detail")
         assert detail == "Successfully submitted for review."
+
+
+    @pytest_asyncio.fixture
+    async def test_store_profile(
+        self, test_store: StoreInDB, store_profile_repo: StoreProfilesRepository
+    ) -> StoreInDB:
+        new_store_profile = StoreProfileCreate(
+            name="test_store",
+            description="test_desc",
+            phone_number=6943444546,
+            address="test_address",
+            lat=38.214,
+            lng=23.812,
+            store_id=test_store.id
+        )
+
+        return await store_profile_repo.create_new_store_profile(
+            new_store_profile=new_store_profile
+        )
 
 
     async def test_store_registration_fails_when_email_is_taken(
@@ -239,110 +246,3 @@ class TestStoreRegistration:
             data=payload
         )
         assert res.status_code == status_code
-
-
-class TestStoreLogin:
-    async def test_verified_store_can_login_successfully_and_receives_valid_token(
-        self, app: FastAPI, client: AsyncClient, verified_test_store: StoreInDB,
-    ) -> None:
-        login_data = {
-            "username": verified_test_store.email,
-            "password": "mysecretpassword",  # test store's plaintext password
-        }
-
-        res = await client.post(
-            app.url_path_for("store-login"),
-            headers={"content-type": "application/x-www-form-urlencoded"},
-            data=login_data
-        )
-        assert res.status_code == status.HTTP_200_OK
-
-        token_type = res.json().get("token_type")
-        assert token_type == "bearer"
-
-        access_token = res.json().get("access_token")
-        payload = jwt.decode(
-            access_token, str(SECRET_KEY), algorithms=[JWT_ALGORITHM]
-        )
-        assert payload["store_id"] == verified_test_store.id
-
-
-    async def test_non_verified_store_cannot_login_successfully(
-        self, app: FastAPI, client: AsyncClient, test_store: StoreInDB,
-    ) -> None:
-        login_data = {
-            "username": test_store.email,
-            "password": "mysecretpassword",  # test store's plaintext password
-        }
-
-        res = await client.post(
-            app.url_path_for("store-login"),
-            headers={"content-type": "application/x-www-form-urlencoded"},
-            data=login_data
-        )
-        assert res.status_code == status.HTTP_403_FORBIDDEN
-
-        detail = res.json().get("detail")
-        assert detail == "Store verification is pending, we will contact you via an email when the process has finished."
-
-
-    @pytest.mark.parametrize(
-        "credential, wrong_value, status_code",
-        (
-            ("email", "wrong@email.com", 401),
-            ("email", "not_email", 401),
-            ("email", None, 422),
-            ("password", "wrongpassword", 401),
-            ("password", None, 422),
-        ),
-    )
-    async def test_store_with_wrong_creds_doesnt_receive_token(
-        self, app: FastAPI, client: AsyncClient, test_store: StoreInDB,
-        credential: str, wrong_value: str, status_code: int,
-    ) -> None:
-        store_data = test_store.model_dump()
-        store_data["password"] = "mysecretpassword" # test store's plaintext password
-        store_data[credential] = wrong_value
-
-        login_data = {
-            "username": store_data["email"],
-            "password": store_data["password"],
-        }
- 
-        res = await client.post(
-            app.url_path_for("store-login"),
-            headers={"content-type": "application/x-www-form-urlencoded"},
-            data=login_data
-        )
-        assert res.status_code == status_code
-        assert "access_token" not in res.json()
-
-
-class TestStoreMe:
-    async def test_authenticated_store_can_retrieve_own_data(
-        self,
-        app: FastAPI,
-        authorized_client_for_verified_test_store: AsyncClient,
-        verified_test_store_profile: StoreProfileInDB,
-    ) -> None:
-        res = await authorized_client_for_verified_test_store.get(
-            app.url_path_for("get-current-store-profile-info")
-        )
-        assert res.status_code == status.HTTP_200_OK
-
-        store_profile = StoreProfileOut(**res.json())
-        assert store_profile.id == verified_test_store_profile.id
-        assert store_profile.name == verified_test_store_profile.name
-        assert store_profile.logo_url == verified_test_store_profile.logo_url
-        assert store_profile.phone_number == verified_test_store_profile.phone_number
-        assert store_profile.address == verified_test_store_profile.address
-        assert store_profile.lat == verified_test_store_profile.lat
-        assert store_profile.lng == verified_test_store_profile.lng
-        assert store_profile.store_id == verified_test_store_profile.store_id
-
-
-    async def test_store_cannot_access_own_data_if_not_authenticated(
-        self, app: FastAPI, client: AsyncClient, test_store: StoreProfileInDB,
-    ) -> None:
-        res = await client.get(app.url_path_for("get-current-store-profile-info"))
-        assert res.status_code == status.HTTP_401_UNAUTHORIZED

@@ -4,6 +4,8 @@ from app.models.core import CoreModel, IDModelMixin
 from app.models.product_details import ProductDetailsOut
 from app.models.tags import TagOut
 from app.models.menu_categories import MenuCategoryOut
+from app.models.store_profiles import StoreProfileOutProductDetailed, StoreProfileOutFilter
+from app.api.enums.products import MaxDistanceOption, SortByOption
 
 
 class ProductBase(CoreModel):
@@ -31,8 +33,12 @@ class ProductCreate(ProductBase):
     store_id: Annotated[int, Field(..., json_schema_extra={'example': 1})]
 
 
-class ProductUpdate(ProductBase):
-    pass
+class ProductOutCreate(IDModelMixin, ProductBase):
+    is_public: Annotated[bool, Field(..., json_schema_extra={'example': True})]
+    store_id: Annotated[int, Field(..., json_schema_extra={'example': 1})]
+    details: ProductDetailsOut
+    tags: list[TagOut]
+    menu_categories: list[MenuCategoryOut]
 
 
 class ProductInDB(IDModelMixin, ProductBase):
@@ -42,13 +48,44 @@ class ProductInDB(IDModelMixin, ProductBase):
     store_id: Annotated[int, Field(..., json_schema_extra={'example': 1})]
 
 
-class ProductPublic(IDModelMixin, ProductBase):
-    pass
-
-
-class ProductOutDetailed(ProductBase):
-    is_public: Annotated[bool, Field(..., json_schema_extra={'example': True})]
-    store_id: Annotated[int, Field(..., json_schema_extra={'example': 1})]
+class ProductOutDetailed(IDModelMixin, ProductBase):
+    store: StoreProfileOutProductDetailed
     details: ProductDetailsOut
     tags: list[TagOut]
     menu_categories: list[MenuCategoryOut]
+
+
+class Filters(CoreModel):
+    lat: Annotated[float, Field(..., json_schema_extra={'example': 38.011726})]
+    lng: Annotated[float, Field(..., json_schema_extra={'example': 23.822457})]
+    tag_ids: Annotated[
+        list[int],
+        Field(..., json_schema_extra={'example': [1, 2, 4]})
+    ]
+    menu_category_ids: Annotated[
+        list[int],
+        Field(..., json_schema_extra={'example': [1, 2]})
+    ]
+    max_dist: Annotated[MaxDistanceOption, Field(..., json_schema_extra={
+        'example': 3
+    })]
+    min_price: Annotated[float, Field(..., json_schema_extra={'example': 0.00})]
+    max_price: Annotated[float, Field(..., json_schema_extra={'example': 10.00})]
+    sort_by: Annotated[SortByOption, Field(..., json_schema_extra={
+        'example': 'product_view_count'
+    })]
+
+
+class ProductOutFilter(IDModelMixin, ProductBase):
+    is_public: Annotated[bool, Field(..., json_schema_extra={'example': True})]
+    store: StoreProfileOutFilter
+    tags: list[TagOut]
+
+
+class ProductsByMenuCategory(CoreModel):
+    menu_category: MenuCategoryOut
+    products: list[ProductOutFilter]
+
+
+class FilterOut(CoreModel):
+    products_by_menu_categories: list[ProductsByMenuCategory]

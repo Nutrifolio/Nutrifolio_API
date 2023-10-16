@@ -1,10 +1,10 @@
-from typing import List, Annotated
+from typing import Annotated
 from pydantic import ValidationError
 from databases import Database
 from mypy_boto3_s3.client import S3Client
-from fastapi import APIRouter, Path, Body, Depends, status, HTTPException, File, UploadFile, Form
+from fastapi import Depends, status, HTTPException, File, UploadFile, Form
 from fastapi.encoders import jsonable_encoder
-from app.models.products import ProductCreate, ProductUpdate, ProductPublic, ProductOutDetailed
+from app.models.products import ProductCreate, ProductOutCreate
 from app.models.product_details import ProductDetailsCreate, ProductDetailsOut
 from app.models.product_tags import ProductTagCreate
 from app.models.product_menu_categories import ProductMenuCategoryCreate
@@ -19,50 +19,9 @@ from app.db.repositories.menu_categories import MenuCategoriesRepository
 from app.api.dependencies.space_bucket import get_sb_client
 from app.api.dependencies.database import get_database, get_repository
 from app.api.dependencies.auth import get_current_store_id
-from app.api.exceptions.products import ProductNotFound, DuplicateProductNameForTheSameStore
+from app.api.exceptions.products import DuplicateProductNameForTheSameStore
 from app.core.config import DO_SPACE_BUCKET_URL
-from app.core.logging import get_logger
-
-
-router = APIRouter()
-
-products_logger = get_logger(__name__)
-
-
-@router.get("/", response_model=List[ProductPublic], name="get-all-products")
-async def get_all_products(
-    products_repo: Annotated[ProductsRepository, Depends(get_repository(ProductsRepository))]
-) -> List[ProductPublic]:
-    try:
-        return await products_repo.get_all_products()
-    except Exception as exc:
-        products_logger.exception(exc)
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            "Failed to retrieve products."
-        )
-
-
-@router.get("/{id}/", response_model=ProductPublic, name="get-product-by-id")
-async def get_product_by_id(
-    id: Annotated[int, Path(..., ge=1)], 
-    products_repo: Annotated[ProductsRepository, Depends(get_repository(ProductsRepository))]
-) -> ProductPublic:
-    try:
-        product = await products_repo.get_product_by_id(id=id)
-
-        if not product:
-            raise ProductNotFound(f"No product found with the id={id}")
-
-        return product
-    except ProductNotFound as exc:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc))
-    except Exception as exc:
-        products_logger.exception(exc)
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            "Failed to retrieve product."
-        )
+from . import router, products_logger
 
 
 async def create_product_tags(
@@ -111,7 +70,7 @@ async def create_product_menu_categories(
 
 @router.post(
     "/",
-    response_model=ProductOutDetailed,
+    response_model=ProductOutCreate,
     name="create-product",
     status_code=status.HTTP_201_CREATED
 )
@@ -154,7 +113,7 @@ async def create_product(
     saturated_fat: float = Form(None),
     tag_ids: list[int] = Form(...),
     menu_category_ids: list[int] = Form(...),
-) -> ProductOutDetailed:
+) -> ProductOutCreate:
     try:
         db_product = await product_repo.get_product_by_name_and_store_id(
             name=name, store_id=store_id
@@ -219,7 +178,7 @@ async def create_product(
                 menu_category_repo=menu_category_repo,
             )
 
-        return ProductOutDetailed(
+        return ProductOutCreate(
             id=created_product.id,
             name=created_product.name,
             description=created_product.description,
@@ -243,51 +202,4 @@ async def create_product(
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             "Failed to create product."
-        )
-
-
-@router.put("/{id}/", response_model=ProductPublic, name="update-product-by-id")
-async def update_product_by_id(
-    id: Annotated[int, Path(..., ge=1)],
-    product_update: Annotated[ProductUpdate, Body(..., embed=True)],
-    products_repo: Annotated[ProductsRepository, Depends(get_repository(ProductsRepository))],
-) -> ProductPublic:
-    try:
-        updated_product = await products_repo.update_product_by_id(
-            id=id, product_update=product_update
-        )
-
-        if not updated_product:
-            raise ProductNotFound(f"No product found with the id={id}")
-
-        return updated_product
-    except ProductNotFound as exc:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc))
-    except Exception as exc:
-        products_logger.exception(exc)
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            "Failed to update product."
-        )
-
-
-@router.delete("/{id}/", response_model=int, name="delete-product-by-id")
-async def delete_product_by_id(
-    id: Annotated[int, Path(..., ge=1)],
-    products_repo: Annotated[ProductsRepository, Depends(get_repository(ProductsRepository))],
-) -> int:
-    try:
-        deleted_id = await products_repo.delete_product_by_id(id=id)
-
-        if not deleted_id:
-            raise ProductNotFound(f"No product found with the id={id}")
-
-        return deleted_id
-    except ProductNotFound as exc:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc))
-    except Exception as exc:
-        products_logger.exception(exc)
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            "Failed to delete product."
         )

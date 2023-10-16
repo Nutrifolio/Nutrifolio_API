@@ -9,6 +9,13 @@ GET_TAG_BY_ID_QUERY = """
     WHERE id = :id;
 """
 
+GET_TAGS_FOR_PRODUCT_BY_PRODUCT_ID_QUERY = """
+    SELECT t.id, t.label, t.description
+    FROM tags AS t
+        INNER JOIN product_tags AS pt ON t.id = pt.tag_id
+    WHERE pt.product_id = :product_id;
+"""
+
 
 class TagsRepository(BaseRepository):
     """"
@@ -24,3 +31,17 @@ class TagsRepository(BaseRepository):
             return None
 
         return TagInDB(**tag_record)
+
+
+    async def get_tags_for_product_by_product_id(
+        self, *, product_id: int
+    ) -> list[TagInDB]:
+        tag_records = await self.db.fetch_all(
+            query=GET_TAGS_FOR_PRODUCT_BY_PRODUCT_ID_QUERY, 
+            values={"product_id": product_id}
+        )
+
+        return [
+            TagInDB(**tag_record)
+            for tag_record in tag_records
+        ]

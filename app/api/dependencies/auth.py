@@ -55,7 +55,7 @@ async def get_current_store_profile(
 ) -> StoreProfileInDB:
     try:
         store_id = auth_service.verify_access_token_store(token=token)
-        db_store_profile = await store_profile_repo.get_store_profile_by_id(
+        db_store_profile = await store_profile_repo.get_store_profile_by_store_id(
             store_id=store_id
         )
         return db_store_profile

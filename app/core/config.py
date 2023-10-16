@@ -22,6 +22,16 @@ DO_ACCESS_KEY = config("DO_ACCESS_KEY", cast=str)
 DO_SECRET_KEY = config("DO_SECRET_KEY", cast=Secret)
 DO_SPACE_BUCKET_URL = config("DO_SPACE_BUCKET_URL", cast=str)
 
+REDIS_HOST = config("REDIS_HOST", cast=str, default="redis-cache")
+REDIS_PORT = config("REDIS_PORT", cast=str, default="6379")
+REDIS_DB = config("REDIS_DB", cast=int, default=0)
+
+REDIS_URL = config(
+    "REDIS_URL",
+    cast=str,
+    default=f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
+)
+
 DATABASE_HOST = config("DATABASE_HOST", cast=str, default="postgis-db")
 DATABASE_PORT = config("DATABASE_PORT", cast=str, default="5432")
 DATABASE_NAME = config("DATABASE_NAME", cast=str)

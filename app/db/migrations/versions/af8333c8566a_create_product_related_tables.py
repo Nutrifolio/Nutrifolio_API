@@ -88,6 +88,7 @@ def create_products_table() -> None:
             "store_id",
             sa.Integer,
             sa.ForeignKey("stores.id", ondelete="CASCADE", onupdate="CASCADE"),
+            index=True,
             nullable=False
         ),
         sa.UniqueConstraint("name", "store_id", name="unique_product_name_per_store")
@@ -118,13 +119,13 @@ def create_product_menu_categories_table() -> None:
     op.create_table('product_menu_categories',
         sa.Column(
             'product_id',
-            sa.Integer(),
+            sa.Integer,
             sa.ForeignKey("products.id", ondelete="CASCADE", onupdate="CASCADE"),
             nullable=False
         ),
         sa.Column(
             'menu_category_id',
-            sa.Integer(),
+            sa.Integer,
             sa.ForeignKey("menu_categories.id", ondelete="CASCADE", onupdate="CASCADE"),
             nullable=False
         ),
@@ -136,13 +137,13 @@ def create_product_tags_table() -> None:
     op.create_table('product_tags',
         sa.Column(
             'product_id',
-            sa.Integer(),
+            sa.Integer,
             sa.ForeignKey("products.id", ondelete="CASCADE", onupdate="CASCADE"),
             nullable=False
         ),
         sa.Column(
             'tag_id',
-            sa.Integer(),
+            sa.Integer,
             sa.ForeignKey("tags.id", ondelete="CASCADE", onupdate="CASCADE"),
             nullable=False
         ),

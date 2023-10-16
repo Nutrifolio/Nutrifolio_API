@@ -8,7 +8,6 @@ GET_PRODUCT_MENU_CATEGORIES_BY_PRODUCT_ID_QUERY = """
     WHERE product_id = :product_id;
 """
 
-
 CREATE_PRODUCT_MENU_CATEGORY_QUERY = """
     INSERT INTO product_menu_categories (product_id, menu_category_id)
     VALUES (:product_id, :menu_category_id)
@@ -20,6 +19,7 @@ class ProductMenuCategoriesRepository(BaseRepository):
     """"
     All database actions associated with the ProductMenuCategories resource
     """
+
 
     async def get_product_menu_categories_by_product_id(
         self, *, product_id: int
