@@ -6,7 +6,9 @@ from app.models.product_details import ProductDetailsInDB
 from app.models.store_profiles import StoreProfileInDB
 from app.models.product_tags import ProductTagInDB
 from app.models.product_menu_categories import ProductMenuCategoryInDB
-from fixtures.test_get_product_by_id_fixtures import (
+from fixtures.test_products_fixtures import (
+    verified_test_store_with_products,
+    verified_test_store_with_products_profile,
     test_product,
     test_product_details,
     test_product_tags,
@@ -25,7 +27,7 @@ class TestGetProductById:
         client: AsyncClient,
         test_product: ProductInDB,
         test_product_details: ProductDetailsInDB,
-        test_store_profile: StoreProfileInDB,
+        verified_test_store_with_products_profile: StoreProfileInDB,
         test_product_tags: list[ProductTagInDB],
         test_product_menu_categories: list[ProductMenuCategoryInDB]
     ) -> None:
@@ -49,6 +51,15 @@ class TestGetProductById:
         assert details["sugars"] == test_product_details.sugars
         assert details["fat"] == test_product_details.fat
         assert details["saturated_fat"] == test_product_details.saturated_fat
+
+        store = product["store"]
+        assert store["id"] == verified_test_store_with_products_profile.store_id
+        assert store["name"] == verified_test_store_with_products_profile.name
+        assert store["logo_url"] == verified_test_store_with_products_profile.logo_url
+        assert store["address"] == verified_test_store_with_products_profile.address
+        assert store["lat"] == verified_test_store_with_products_profile.lat
+        assert store["lng"] == verified_test_store_with_products_profile.lng
+
 
         tags = product["tags"]
         assert len(tags) == len(test_product_tags)

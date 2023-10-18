@@ -55,6 +55,11 @@ INCREMENT_PRODUCT_VIEW_COUNT_BY_ID_QUERY = """
     WHERE id = :id;
 """
 
+DELETE_PRODUCT_BY_ID_QUERY = """
+    DELETE FROM products
+    WHERE id = :id;
+"""
+
 
 class ProductsRepository(BaseRepository):
     """"
@@ -127,3 +132,10 @@ class ProductsRepository(BaseRepository):
             return None
 
         return ProductInDB(**product_record)
+
+
+    async def delete_product_by_id(self, *, id: int) -> None:
+        await self.db.execute(
+            query=DELETE_PRODUCT_BY_ID_QUERY,
+            values={"id": id}
+        )

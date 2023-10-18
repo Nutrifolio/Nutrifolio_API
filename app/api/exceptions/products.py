@@ -4,3 +4,7 @@ class ProductNotFound(Exception):
 
 class DuplicateProductNameForTheSameStore(Exception):
     pass
+
+
+class ProductBelongsToAnotherStore(Exception):
+    pass
