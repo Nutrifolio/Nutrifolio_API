@@ -29,6 +29,14 @@ GET_STORE_PROFILE_FILTER_VIEW_BY_STORE_ID_QUERY = """
     WHERE store_id = :store_id;
 """
 
+GET_STORE_PROFILE_SIMPLE_VIEW_BY_STORE_ID_QUERY = """
+    SELECT
+        id, name, description, logo_url, phone_number, address, 
+        lat, lng, store_id
+    FROM store_profiles
+    WHERE store_id = :store_id;
+"""
+
 GET_STORE_PROFILE_BY_STORE_ID_QUERY = """
     SELECT 
         id, name, description, logo_url, phone_number, address, 
@@ -113,6 +121,20 @@ class StoreProfilesRepository(BaseRepository):
             return None
 
         return StoreProfileOutFilter(**store_profile_record)
+
+
+    async def get_store_profile_simple_view_by_store_id(
+        self, *, store_id: int
+    ) -> StoreProfileInDB:
+        store_profile_record = await self.db.fetch_one(
+            query=GET_STORE_PROFILE_SIMPLE_VIEW_BY_STORE_ID_QUERY,
+            values={"store_id": store_id}
+        )
+
+        if not store_profile_record:
+            return None
+
+        return StoreProfileInDB(**store_profile_record)
 
 
     async def get_store_profile_by_store_id(self, *, store_id: int) -> StoreProfileInDB:

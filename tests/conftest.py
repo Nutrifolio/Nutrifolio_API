@@ -143,6 +143,25 @@ async def test_store(store_repo: StoresRepository) -> StoreInDB:
     return await store_repo.register_new_store(new_store=new_store)
 
 
+@pytest_asyncio.fixture
+async def test_store_profile(
+    test_store: StoreInDB, store_profile_repo: StoreProfilesRepository
+) -> StoreInDB:
+    new_store_profile = StoreProfileCreate(
+        name="test_store",
+        description="test_desc",
+        phone_number=6943444546,
+        address="test_address",
+        lat=38.214,
+        lng=23.812,
+        store_id=test_store.id
+    )
+
+    return await store_profile_repo.create_new_store_profile(
+        new_store_profile=new_store_profile
+    )
+
+
 # Create a verified test store
 @pytest_asyncio.fixture
 async def verified_test_store(

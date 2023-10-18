@@ -48,11 +48,15 @@ class ProductInDB(IDModelMixin, ProductBase):
     store_id: Annotated[int, Field(..., json_schema_extra={'example': 1})]
 
 
-class ProductOutDetailed(IDModelMixin, ProductBase):
+class ProductDetailed(IDModelMixin, ProductBase):
     store: StoreProfileOutProductDetailed
     details: ProductDetailsOut
     tags: list[TagOut]
     menu_categories: list[MenuCategoryOut]
+
+
+class ProductDetailedOut(CoreModel):
+    product: ProductDetailed
 
 
 class Filters(CoreModel):

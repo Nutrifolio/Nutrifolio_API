@@ -21,7 +21,13 @@ FILTER_PRODUCTS_FROM_NEARBY_STORES_QUERY = """
     HAVING COUNT(DISTINCT pt.tag_id) = :tag_count;
 """
 
-GET_PRODUCT_BY_ID_QUERY = "SELECT * FROM products WHERE id = :id;"
+GET_PRODUCT_BY_ID_QUERY = """
+    SELECT
+        id, name, description, image_url, price,
+        view_count, has_details, is_public, store_id
+    FROM products
+    WHERE id = :id;
+"""
 
 GET_PRODUCT_BY_NAME_AND_STORE_ID_QUERY = """
     SELECT
@@ -41,6 +47,12 @@ CREATE_PRODUCT_QUERY = """
     RETURNING
         id, name, description, image_url, price,
         view_count, has_details, is_public, store_id;
+"""
+
+INCREMENT_PRODUCT_VIEW_COUNT_BY_ID_QUERY = """
+    UPDATE products
+    SET view_count = view_count + 1
+    WHERE id = :id;
 """
 
 
@@ -101,5 +113,17 @@ class ProductsRepository(BaseRepository):
         product_record = await self.db.fetch_one(
             query=CREATE_PRODUCT_QUERY, values=new_product.model_dump()
         )
+
+        return ProductInDB(**product_record)
+
+
+    async def increment_product_view_count_by_id(self, *, id=id) -> ProductInDB:
+        product_record = await self.db.fetch_one(
+            query=INCREMENT_PRODUCT_VIEW_COUNT_BY_ID_QUERY,
+            values={"id": id}
+        )
+
+        if not product_record:
+            return None
 
         return ProductInDB(**product_record)

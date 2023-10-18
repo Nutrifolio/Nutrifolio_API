@@ -1,5 +1,4 @@
 import pytest
-import pytest_asyncio
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from app.models.stores import StoreInDB
@@ -119,25 +118,6 @@ class TestStoreRegistration:
 
         detail = res.json().get("detail")
         assert detail == "Successfully submitted for review."
-
-
-    @pytest_asyncio.fixture
-    async def test_store_profile(
-        self, test_store: StoreInDB, store_profile_repo: StoreProfilesRepository
-    ) -> StoreInDB:
-        new_store_profile = StoreProfileCreate(
-            name="test_store",
-            description="test_desc",
-            phone_number=6943444546,
-            address="test_address",
-            lat=38.214,
-            lng=23.812,
-            store_id=test_store.id
-        )
-
-        return await store_profile_repo.create_new_store_profile(
-            new_store_profile=new_store_profile
-        )
 
 
     async def test_store_registration_fails_when_email_is_taken(
