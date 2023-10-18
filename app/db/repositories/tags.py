@@ -3,6 +3,11 @@ from app.db.repositories.base import BaseRepository
 from app.models.tags import TagInDB
 
 
+GET_TAGS_QUERY = """
+    SELECT id, label, description
+    FROM tags;
+"""
+
 GET_TAG_BY_ID_QUERY = """
     SELECT id, label, description
     FROM tags
@@ -21,6 +26,15 @@ class TagsRepository(BaseRepository):
     """"
     All database actions associated with the Tag resource
     """
+
+    async def get_all_tags(self) -> List[TagInDB]:
+        tag_records = await self.db.fetch_all(query=GET_TAGS_QUERY)
+
+        return [
+            TagInDB(**tag_record)
+            for tag_record in tag_records
+        ]
+
 
     async def get_tag_by_id(self, *, id: int) -> TagInDB:
         tag_record = await self.db.fetch_one(

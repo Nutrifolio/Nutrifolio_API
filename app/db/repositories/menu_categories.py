@@ -3,6 +3,11 @@ from app.db.repositories.base import BaseRepository
 from app.models.menu_categories import MenuCategoryInDB
 
 
+GET_MENU_CATEGORIES_QUERY = """
+    SELECT id, label, description
+    FROM menu_categories;
+"""
+
 GET_MENU_CATEGORY_BY_ID_QUERY = """
     SELECT id, label, description
     FROM menu_categories
@@ -21,6 +26,17 @@ class MenuCategoriesRepository(BaseRepository):
     """"
     All database actions associated with the MenuCategory resource
     """
+
+    async def get_all_menu_categories(self) -> List[MenuCategoryInDB]:
+        menu_category_records = await self.db.fetch_all(
+            query=GET_MENU_CATEGORIES_QUERY
+        )
+
+        return [
+            MenuCategoryInDB(**menu_category_record) 
+            for menu_category_record in menu_category_records
+        ]
+
 
     async def get_menu_category_by_id(self, *, id: int) -> MenuCategoryInDB:
         menu_category_record = await self.db.fetch_one(

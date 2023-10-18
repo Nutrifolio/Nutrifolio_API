@@ -21,3 +21,7 @@ class TagInDB(IDModelMixin, TagBase):
 
 class TagOut(IDModelMixin, TagBase):
     pass
+
+
+class TagsOut(CoreModel):
+    tags: list[TagOut]

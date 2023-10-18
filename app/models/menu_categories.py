@@ -21,3 +21,7 @@ class MenuCategoryInDB(IDModelMixin, MenuCategoryBase):
 
 class MenuCategoryOut(IDModelMixin, MenuCategoryBase):
     pass
+
+
+class MenuCategoriesOut(CoreModel):
+    menu_categories: list[MenuCategoryOut]
