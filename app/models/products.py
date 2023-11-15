@@ -81,7 +81,6 @@ class Filters(CoreModel):
 
 
 class ProductOutFilter(IDModelMixin, ProductBase):
-    is_public: Annotated[bool, Field(..., json_schema_extra={'example': True})]
     store: StoreProfileOutFilter
     tags: list[TagOut]
 
@@ -93,3 +92,12 @@ class ProductsByMenuCategory(CoreModel):
 
 class FilterOut(CoreModel):
     products_by_menu_categories: list[ProductsByMenuCategory]
+
+
+class ProductOutStore(IDModelMixin, ProductBase):
+    tags: list[TagOut]
+
+
+class ProductsByMenuCategoryStore(CoreModel):
+    menu_category: MenuCategoryOut
+    products: list[ProductOutStore]

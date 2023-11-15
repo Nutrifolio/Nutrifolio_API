@@ -4,3 +4,7 @@ class StoreNameAlreadyExists(Exception):
 
 class StoreNotVerified(Exception):
     pass
+
+
+class StoreNotFound(Exception):
+    pass

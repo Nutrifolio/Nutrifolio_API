@@ -21,6 +21,14 @@ FILTER_PRODUCTS_FROM_NEARBY_STORES_QUERY = """
     HAVING COUNT(DISTINCT pt.tag_id) = :tag_count;
 """
 
+GET_PRODUCTS_FROM_STORE_BY_ID_QUERY = """
+    SELECT
+        p.id, p.name, p.description, p.image_url, p.price, p.view_count,
+        p.has_details, p.is_public, p.store_id
+    FROM products AS p
+    WHERE store_id = :store_id AND p.is_public = TRUE;
+"""
+
 GET_PRODUCT_BY_ID_QUERY = """
     SELECT
         id, name, description, image_url, price,
@@ -85,6 +93,16 @@ class ProductsRepository(BaseRepository):
                 "max_price": max_price,
                 "tag_count": len(tag_ids)
             }
+        )
+        return [ProductInDB(**product) for product in product_records]
+    
+
+    async def get_products_from_store_by_id(
+        self, *, store_id: int
+    ) -> List[ProductInDB]:
+        product_records = await self.db.fetch_all(
+            query=GET_PRODUCTS_FROM_STORE_BY_ID_QUERY,
+            values={"store_id": store_id}
         )
         return [ProductInDB(**product) for product in product_records]
 

@@ -23,7 +23,7 @@ async def verified_test_store_with_products(
     db: Database, store_repo: StoresRepository
 ) -> StoreInDB:
     new_store = StoreCreate(
-        email="empty_store@mystore.com",
+        email="store@mystore.com",
         password="mysecretpassword",
         conf_password="mysecretpassword",
     )
@@ -47,7 +47,7 @@ async def verified_test_store_with_products_profile(
     store_profile_repo: StoreProfilesRepository
 ) -> StoreProfileInDB:
     new_store_profile = StoreProfileCreate(
-        name="verified_test_store_without_products_profile",
+        name="verified_test_store_with_products_profile",
         description="test_desc",
         phone_number=6943444546,
         address="test_address",

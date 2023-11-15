@@ -81,3 +81,23 @@ class StoreProfileOutFilter(IDModelMixin):
     distance_km: Annotated[
         float, Field(..., json_schema_extra={'example': 1.23})
     ]
+
+
+# Placed here to resolve circular import error.
+from app.models.products import ProductsByMenuCategoryStore
+
+
+class StoreProfileOutWithProducts(IDModelMixin):
+    # The id contained in this model will actually be the store_id
+    name: Annotated[
+        str, Field(..., json_schema_extra={'example': 'Starbucks'})
+    ]
+    logo_url: Annotated[
+        Optional[str],
+        Field(default=None, json_schema_extra={
+            'example': 'https://domain.com/path/logo.png'
+        })
+    ]
+    lat: Annotated[float, Field(..., json_schema_extra={'example': 38.011726})]
+    lng: Annotated[float, Field(..., json_schema_extra={'example': 23.822457})]
+    products_by_menu_categories: list[ProductsByMenuCategoryStore]
