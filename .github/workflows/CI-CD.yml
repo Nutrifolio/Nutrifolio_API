@@ -1,0 +1,90 @@
+name: Nutrifolio API CI/CD
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  integration-testing:
+    runs-on: ubuntu-latest
+    container: python:3.11.5-slim-bullseye
+
+    services:
+      redis:
+        image: redis:7.2.1
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      postgis-db:
+        image: postgis/postgis:15-3.3
+        env:
+          POSTGRES_DB: ${{ vars.DATABASE_NAME }}
+          POSTGRES_USER: ${{ secrets.DATABASE_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_HOST: postgis-db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${{ vars.DATABASE_NAME }}
+      DATABASE_USER: ${{ secrets.DATABASE_USER }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      DO_ACCESS_KEY: ${{ secrets.DO_ACCESS_KEY }}
+      DO_SECRET_KEY: ${{ secrets.DO_SECRET_KEY }}
+      DO_SPACE_BUCKET_URL: ${{ secrets.DO_SPACE_BUCKET_URL }}
+      DSN: ${{ secrets.DSN }}
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+
+      - name: Execute tests with pytest
+        run: pytest
+
+  push_to_registry:
+    if: github.event_name == 'push'
+
+    needs: integration-testing
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          username: ${{ vars.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ vars.DOCKER_HUB_USER }}/${{ vars.DOCKER_HUB_REPOSITORY_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+
+      - name: Build Docker image and push to Docker Hub
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
